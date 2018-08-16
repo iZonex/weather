@@ -54,7 +54,8 @@ func main() {
 	flag.Parse()
 	mqttHost := *mqttHostFlag
 	gpioPin := *gpioFlag
-	periodic := * periodicFlag
+	periodicInt := time.Duration(*periodicFlag)
+        periodicTime := periodicInt * 1000 * time.Millisecond
 	const TOPIC = "/sensors/climat"
 	port := 1883
 	fmt.Println("Connecting to MQTT server")
@@ -87,6 +88,6 @@ func main() {
 			fmt.Println("New data was sent to server")
 			thingData = newThingData
 		}
-		time.Sleep(periodic * 1000 * time.Millisecond)
+		time.Sleep(periodicTime)
 	}
 }
