@@ -61,16 +61,15 @@ func main() {
 	}
 
 	brokerURL := fmt.Sprintf("tcp://%s:%d", mqttHost, port)
-	fmt.Printf("MQTT url to server: %v", brokerURL)
+	fmt.Printf("MQTT url to server: %v\n", brokerURL)
 	connOpts.AddBroker(brokerURL)
 
 	client := mqtt.NewClient(connOpts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		panic(token.Error())
 	}
-	fmt.Println("")
 	fmt.Println("Connection to MQTT server established")
-        fmt.Println("Start fetching data from sensor")
+	fmt.Println("Start fetching data from sensor")
 
 	thingData := Data{}
 	for {
