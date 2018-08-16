@@ -50,9 +50,11 @@ func cmpSensorData(currentData Data, newData Data) bool {
 func main() {
 	mqttHostFlag := flag.String("mqtt", "192.168.178.108", "MQTT server address")
 	gpioFlag := flag.Int("gpio", 4, "Default GPIO")
+	periodicFlag := flag.Int("periodic", 2, "Gather data every number sec") 
 	flag.Parse()
 	mqttHost := *mqttHostFlag
 	gpioPin := *gpioFlag
+	periodic := * periodicFlag
 	const TOPIC = "/sensors/climat"
 	port := 1883
 	fmt.Println("Connecting to MQTT server")
@@ -85,6 +87,6 @@ func main() {
 			fmt.Println("New data was sent to server")
 			thingData = newThingData
 		}
-		time.Sleep(8000 * time.Millisecond)
+		time.Sleep(periodic * 1000 * time.Millisecond)
 	}
 }
