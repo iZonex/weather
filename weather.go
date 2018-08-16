@@ -19,7 +19,7 @@ type Data struct {
 }
 
 var serialNumber = getBoardSN()
-var sensorType = dht.DHT22
+var sensorType = dht.AM2301
 
 func getBoardSN() string {
 	path := "/proc/device-tree/serial-number"
@@ -30,8 +30,8 @@ func getBoardSN() string {
 }
 
 func getSensorData() Data {
-	temperature, humidity, _ := dht.ReadDHTxx(sensorType, 4, false)
-	if temperature != -1 && humidity != -1 {
+	temperature, humidity, err := dht.ReadDHTxx(sensorType, 4, false)
+	if temperature != 0 && humidity != 0 && err == nil {
 		thingData := Data{
 			Temp: temperature,
 			Hum:  humidity,
@@ -42,17 +42,18 @@ func getSensorData() Data {
 }
 
 func cmpSensorData(currentData Data, newData Data) bool {
-	correctTemp := newData.Temp-currentData.Temp <= 5
-	correctHum := newData.Hum-currentData.Hum <= 5
+	correctTemp := newData.Temp-currentData.Temp <= 5 && newData.Temp != 0
+	correctHum := newData.Hum-currentData.Hum <= 5 && newData.Temp != 0
 	return correctTemp && correctHum
 }
 
 func main() {
-	mqttHostFlag := flag.String("mqtt", "localhost", "MQTT server address")
+	mqttHostFlag := flag.String("mqtt", "192.168.178.108", "MQTT server address")
 	flag.Parse()
 	mqttHost := *mqttHostFlag
 	const TOPIC = "/sensors/climat"
 	port := 1883
+	fmt.Println("Connecting to MQTT server")
 	connOpts := &mqtt.ClientOptions{
 		ClientID:      serialNumber,
 		CleanSession:  true,
@@ -60,12 +61,16 @@ func main() {
 	}
 
 	brokerURL := fmt.Sprintf("tcp://%s:%d", mqttHost, port)
+	fmt.Printf("MQTT url to server: %v", brokerURL)
 	connOpts.AddBroker(brokerURL)
 
 	client := mqtt.NewClient(connOpts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		panic(token.Error())
 	}
+	fmt.Println("")
+	fmt.Println("Connection to MQTT server established")
+        fmt.Println("Start fetching data from sensor")
 
 	thingData := Data{}
 	for {
@@ -76,8 +81,9 @@ func main() {
 				data, _ := json.Marshal(newThingData)
 				client.Publish(TOPIC, 0, false, data)
 			}
+			fmt.Println("New data was sent to server")
 			thingData = newThingData
 		}
-		time.Sleep(2000 * time.Millisecond)
+		time.Sleep(8000 * time.Millisecond)
 	}
 }
