@@ -29,8 +29,8 @@ func getBoardSN() string {
 	return value
 }
 
-func getSensorData() Data {
-	temperature, humidity, err := dht.ReadDHTxx(sensorType, 4, false)
+func getSensorData(gpioPin int) Data {
+	temperature, humidity, err := dht.ReadDHTxx(sensorType, gpioPin, false)
 	if temperature != 0 && humidity != 0 && err == nil {
 		thingData := Data{
 			Temp: temperature,
@@ -49,8 +49,10 @@ func cmpSensorData(currentData Data, newData Data) bool {
 
 func main() {
 	mqttHostFlag := flag.String("mqtt", "192.168.178.108", "MQTT server address")
+	gpioFlag := flag.Int("gpio", 4, "Default GPIO")
 	flag.Parse()
 	mqttHost := *mqttHostFlag
+	gpioPin := *gpioFlag
 	const TOPIC = "/sensors/climat"
 	port := 1883
 	fmt.Println("Connecting to MQTT server")
@@ -73,7 +75,7 @@ func main() {
 
 	thingData := Data{}
 	for {
-		newThingData := getSensorData()
+		newThingData := getSensorData(gpioPin)
 		if newThingData != thingData {
 			if cmpSensorData(thingData, newThingData) {
 				newThingData.ThingID = serialNumber
